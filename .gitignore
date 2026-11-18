@@ -1,0 +1,31 @@
+# Dados (baixados e gerados no nó de login)
+data/
+
+# Saídas dos jobs
+results/
+logs/
+*.out
+*.err
+
+# Checkpoints de modelo
+*.pt
+*.pth
+*.ckpt
+
+# Ambientes Python
+.venv/
+venv/
+env/
+.conda/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+.pytest_cache/
+
+# Editor e sistema
+.vscode/
+.idea/
+.DS_Store
