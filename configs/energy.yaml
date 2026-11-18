@@ -1,0 +1,74 @@
+# Constantes do modelo de energia e carbono.
+# Base: Cloud Carbon Footprint (CCF), como em Saavedra, Mendes e Ferreira,
+# "Environmental Impact of CI/CD Pipelines", arXiv:2510.26413.
+# O cálculo é feito depois do treino (analysis/compute_energy.py), a partir da
+# telemetria bruta. Mudar um valor aqui NÃO exige treinar de novo.
+
+cpu:
+  # Watts por vCPU (thread de hardware). O nó gpu-8-h100 do NPAD usa
+  # 2x AMD EPYC 9654 (4ª geração, Genoa). Coeficientes do CCF para "EPYC 4th Gen":
+  # https://github.com/cloud-carbon-footprint/ccf-coefficients
+  #   output/coefficients-aws-use.csv  -> min 0.7391, max 2.2822  (usado)
+  #   output/coefficients-gcp-use.csv  -> min 0.7391, max 2.1959
+  #   output/coefficients-azure-use.csv não tem a 4ª geração.
+  # Para comparação, o artigo usou 0.434 / 1.948 (EPYC 3ª geração, Azure).
+  architecture: EPYC 4th Gen
+  vcpu_min_w: 0.7391482469512195
+  vcpu_max_w: 2.282155106707317
+
+memory:
+  kwh_per_gb_hour: 0.000392      # artigo / CCF
+
+storage:
+  kwh_per_tb_hour: 0.0012        # artigo / CCF (SSD)
+  reserved_gb: auto              # auto = tamanho de data/processed; o artigo usa 14 GB
+
+network:
+  kwh_per_gb: 0.001              # artigo / CCF
+
+gpu:
+  # Extensão do método: o artigo exclui GPU. Aplicamos a mesma forma do CCF,
+  # P = P_min + (P_max - P_min) * utilização, por GPU alocada.
+  # O NVML também mede a energia real da GPU; ela é reportada lado a lado
+  # para validar a estimativa.
+  model: NVIDIA H100 80GB SXM5
+  min_w: measured                # measured = potência média na fase ociosa (idle_baseline)
+  min_w_fallback: 70.0           # usado só se não houver fase ociosa medida
+  max_w: 700.0                   # TDP do H100 SXM5 (datasheet da NVIDIA)
+
+datacenter:
+  # Região "South America". O artigo só dá um valor agregado para as Américas
+  # (Azure). TODO: trocar pelo PUE real do NPAD, se o NPAD informar.
+  # Água está fora do escopo do projeto (só energia e carbono).
+  pue: 1.17
+
+embodied:
+  # Fórmula do artigo: total * (t / vida útil) * (vCPUs alocadas / vCPUs do nó)
+  total_tco2e: 1.61079
+  lifespan_years: 4
+  node_vcpus: auto               # auto = lido de node.json (lscpu)
+
+carbon:
+  source: ons
+  subsystem: NE                  # Nordeste (NPAD fica em Natal/RN)
+  timezone: America/Fortaleza    # din_instante do ONS está no horário de Brasília (UTC-3)
+  ons_url_template: "https://ons-aws-prod-opendata.s3.amazonaws.com/dataset/geracao_usina_2_ho/GERACAO_USINA-2_{year}_{month:02d}.parquet"
+  cache_dir: data/ons
+  # Como no artigo: intensidade da hora em que o job começou.
+  # Intensidade = soma(geração_fonte * fator_fonte) / soma(geração), só com a
+  # produção do subsistema (sem descontar intercâmbio entre subsistemas).
+  # Fatores de ciclo de vida, gCO2e/kWh (medianas do IPCC AR5, os mesmos usados
+  # pelo Electricity Maps).
+  emission_factors_g_per_kwh:
+    Hidráulica: 24
+    Eólica: 11
+    Fotovoltaica: 48
+    Nuclear: 12
+    Gás: 490
+    Carvão: 820
+    Biomassa: 230
+    Óleo Combustível: 650
+    Óleo Diesel: 650
+    Outras Multi-Combustível: 650   # conservador: tratado como óleo
+    Resíduos Industriais: 700       # conservador: fonte não especificada
+  unknown_factor_g_per_kwh: 700     # qualquer combustível não listado acima

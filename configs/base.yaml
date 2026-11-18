@@ -1,0 +1,29 @@
+# Configuração comum aos dois modelos. Tudo que não é arquitetura fica aqui,
+# para garantir que CNN e ViT treinem com exatamente a mesma receita.
+
+data:
+  repo_id: updatebao/geonamebase_1
+  images_per_class: 100
+  split: {train: 80, val: 10, test: 10}     # imagens por classe
+  image_size: 224
+  selection_seed: 0                         # seleção do subconjunto e da divisão (fixa entre runs)
+  raw_dir: data/raw
+  processed_dir: data/processed
+
+train:
+  epochs: 100
+  batch_size: 128
+  optimizer: adamw
+  lr: 1.0e-3
+  weight_decay: 0.05
+  warmup_epochs: 5
+  label_smoothing: 0.1
+  amp_dtype: bfloat16          # H100: bf16 nativo
+  augment:
+    random_resized_crop_scale: [0.35, 1.0]
+    hflip: true
+  num_threads: 8               # torch.set_num_threads; deve ser <= --cpus-per-task
+
+measurement:
+  sample_interval_s: 1.0       # intervalo da telemetria (o artigo não especifica)
+  idle_baseline_s: 60          # GPU/CPU ociosos antes do treino (referência, não entra no treino)

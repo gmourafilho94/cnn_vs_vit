@@ -1,0 +1,8 @@
+# Vision Transformer no estilo ViT-Tiny/16, implementado do zero (src/models/vit.py).
+name: vit
+arch: vit
+patch_size: 16
+embed_dim: 192
+depth: 12
+num_heads: 3
+mlp_ratio: 4.0

@@ -1,0 +1,6 @@
+# CNN residual no estilo ResNet-18, implementada do zero (src/models/cnn.py).
+name: cnn
+arch: resnet
+stem_channels: 64
+stage_channels: [64, 128, 256, 512]
+blocks_per_stage: [2, 2, 2, 2]
